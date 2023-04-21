@@ -1,0 +1,80 @@
+Spark data streaming:
+
+# 1.0 Import necessary library
+from pyspark.sql.types import  StructType, IntegerType, DateType, StringType
+
+# 1.1 Define schema of data:
+invoiceSchema = StructType() \
+                            .add("cusid", IntegerType(), True) \
+                            .add("item", StringType(), True) \
+                            .add("price", IntegerType(), True) \
+                            .add("qty", IntegerType(), True) \
+                            .add("eventTime", DateType(), True)
+							
+linuxDir        =  "file:///home/ashok/Documents/spark/data"
+hadoopDir       =  "hdfs://localhost:9000/user/ashok/spark/data"
+
+# 1.2.1
+
+// Reading the user.csv file
+dfuser = spark.read.csv("/user/ashok/user.csv", header=True)
+
+// Reading invoice data
+dfClients =  spark \
+.readStream \
+.format("csv") \
+.option("header",True) \
+.option("path",hadoopDir) \
+.schema(invoiceSchema) \
+.load()
+
+
+# 1.2.2 Interested in only those who purchase chilli powder:
+//Creating tempview of both the data source
+
+dxuser = dfuser.createOrReplaceTempView("user")
+dxuser1= dfClients.createOrReplaceTempView("user1")
+
+//Joining the two data source with spark sql
+chilliCustomers = spark.sql("select b.name, a.qty from user b, user1 a where a.cusid=b.customerId and a.item='chilli'")
+
+
+# 2.0 Write output to console:
+chilliCustomers \
+                 .writeStream \
+                 .outputMode("append") \
+                 .format("console") \
+                 .start()
+
+
+
+
+
+//Output
+
+
+Batch: 0
+-------------------------------------------
++-----+---+
+| name|qty|
++-----+---+
+| abhi| 77|
+| wety|113|
+|  mon|187|
+| gweu|190|
+| wety| 22|
+| gash|165|
+|ashok|141|
+| rets|148|
+|  tex|132|
+| wety|160|
+|ashok| 76|
+| abhi|173|
+|  tex| 81|
+| deas|151|
+|ashok| 39|
+| rets|185|
+| deas| 85|
+| rets|122|
+| wety| 98|
+| rets| 18|
